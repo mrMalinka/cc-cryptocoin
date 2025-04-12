@@ -5,12 +5,19 @@ rand.initWithTiming()
 
 -- gets or creates a wallet
 local function getPrivate()
-    assert((peripheral.getType("left") == "drive") ~= (peripheral.getType("right") == "drive"), "Please place only one disk drive on the left or righ side of the computer.")
+    local drive
+    if peripheral.getType("left") == "drive" then
+        drive = peripheral.wrap("left")
+    elseif peripheral.getType("right") == "drive" then
+        drive = peripheral.wrap("right")
+    else
+        error("Please place only one disk drive on the left or righ side of the computer.")
+    end
     local drive = peripheral.wrap("left") or peripheral.wrap("right")
     assert(drive.isDiskPresent(), "No disk inside disk drive!")
+    drive.setDiskLabel("Crypto Wallet")
 
     local path = fs.combine(drive.getMountPath(), "wallet.db")
-    diskDrive = drive
     if fs.exists(path) and not fs.isDir(path) then
         local file = fs.open(path, "r")
         local priv = file.read(32)
