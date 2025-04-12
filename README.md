@@ -3,8 +3,6 @@ A modem-based cryptocurrency in minecraft using CC: Tweaked. NOT a blockchain!
 
 ## Setup
 
----
-
 ### Node
 A node should only have one **ender** modem and only one disk drive on either the left or right side.  
 
