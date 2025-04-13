@@ -151,7 +151,7 @@ local function syncLedgerByNetwork()
             term.setTextColor(colors.green)
             while true do
                 local _, _, _, _, msg, dist = os.pullEvent("modem_message")
-                if msg then
+                if msg and dist then
                     printC(colors.green, "New ledger received!")
                     if checkLedgerFields(msg) then
                         -- restore metatables
