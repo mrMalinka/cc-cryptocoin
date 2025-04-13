@@ -465,7 +465,7 @@ parallel.waitForAny(
     end,
     function()
         while true do
-            local f = fs.open("startup.lua")
+            local f = fs.open("startup.lua", "r")
             local currentHash = blake3(f.readAll())
             f.close()
 
