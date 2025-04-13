@@ -6,8 +6,8 @@ A modem-based, decentralized cryptocurrency in minecraft using CC: Tweaked. NOT 
 ### Node
 A node should only have one **ender** modem and only one disk drive on either the left or right side.  
 
-**Example:**
-![Node](images/node.png)
+**Example:**  
+<img src="images/node.png" width=700>
 
 The floppy disk inside the disk drive will be used as the wallet.
 > [!NOTE]
@@ -20,7 +20,7 @@ The simplest way to get the script is to run the following command in the advanc
 ```sh
 wget https://raw.githubusercontent.com/mrMalinka/cc-cryptocoin/refs/heads/main/startup.lua
 ```
-Then, run `startup.lua` (or reboot, since its a startup file) and wait for it to connect. You can also run `startup.lua wallet` to get your public wallet address and put it on pastebin. It is recommended to force load the node using any chunk loading method you have.
+Then, run `startup.lua` (or reboot, since its a startup file) and wait for it to connect. You can also run `startup.lua wallet` to get your public wallet address and put it on pastebin. **It is recommended to force load the node using any chunk loading method you have** (such as chunky turtles from advanced peripherals).
 
 > [!TIP]
 > If you are the first on a server to set up a node, run `startup.lua genesis` instead. This will, by default, start you with 20,000 coins.
