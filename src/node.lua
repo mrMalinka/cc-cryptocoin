@@ -459,7 +459,7 @@ else
         printC(
             colors.red,
             ("Warning:\nScript is not named startup.lua! Please run this command:\n`mv %s startup.lua`\nto rename."):format(
-                pname`
+                pname
             )
         )
         sleep(2)
