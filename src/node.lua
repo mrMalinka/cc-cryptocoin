@@ -156,8 +156,8 @@ local function syncLedgerByNetwork()
                         until #ledgers > 0
                     end,
                     function()
-                        printC(colors.red, "Click to stop...")
-                        os.pullEvent("mouse_button")
+                        printC(colors.red, "\nClick to stop...")
+                        os.pullEvent("mouse_click")
                     end
                 )
             end
@@ -409,6 +409,7 @@ local function startNode(genesisLedger)
     save.close()
 end
 
+clear()
 local args = {...}
 if args[1] == "genesis" then
     clear()
@@ -457,8 +458,8 @@ else
     if pname ~= "startup.lua" then
         printC(
             colors.red,
-            ("Warning:\nScript is not named startup.lua! Please run 'mv %s startup.lua' to rename."):format(
-                pname
+            ("Warning:\nScript is not named startup.lua! Please run this command:\n`mv %s startup.lua`\nto rename."):format(
+                pname`
             )
         )
         sleep(2)
