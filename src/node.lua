@@ -411,14 +411,13 @@ end
 
 clear()
 local args = {...}
+local genesisLedger
 if args[1] == "genesis" then
     clear()
     printC(colors.green, "Creating genesis node...")
-    local ledger = setmetatable({}, Ledger)
-    ledger.transactions = {}
+    genesisLedger = setmetatable({}, Ledger)
+    genesisLedger.transactions = {}
 
-    local priv = walletLib.getPrivate()
-    local pub = ed25519.publicKey(priv)
     local ownerAddress = walletLib.pubkeyToAddress(
         ed25519.publicKey(walletLib.getPrivate())
     )
@@ -431,16 +430,11 @@ if args[1] == "genesis" then
         ""
     )
 
-    table.insert(ledger.transactions, genesisTx)
+    table.insert(genesisLedger.transactions, genesisTx)
 
     local save = fs.open("ledger.db", "w")
-    save.write(textutils.serialize(ledger, {compact = true}))
+    save.write(textutils.serialize(genesisLedger, {compact = true}))
     save.close()
-
-    print("Genesis ledger created. Owner's address:", ownerAddress)
-    print("Owner's balance:", ledger:balanceOf(ownerAddress))
-    print("Starting genesis node...")
-    startNode(ledger)
     
 elseif args[1] == "wallet" then
     clear()
@@ -452,18 +446,41 @@ elseif args[1] == "wallet" then
 
     printC(colors.blue, "Placing on pastebin...")
     pbinPut(address)
+end
 
-else
-    local pname = shell.getRunningProgram()
-    if pname ~= "startup.lua" then
-        printC(
-            colors.red,
-            ("Warning:\nScript is not named startup.lua! Please run this command:\n`mv %s startup.lua`\nto rename."):format(
-                pname
-            )
-        )
-        sleep(2)
+
+local pname = shell.getRunningProgram()
+if pname ~= "startup.lua" then
+    if fs.exists("startup.lua") then
+        printC(colors.red, "Moving existing `startup.lua` to `_old_startup.lua`")
+        fs.move("startup.lua", "_old_startup.lua")
     end
 
-    startNode()
+    fs.move(pname, "startup.lua")
 end
+
+parallel.waitForAny(
+    function()
+        startNode(genesisLedger)
+    end,
+    function()
+        while true do
+            local f = fs.open("startup.lua")
+            local currentHash = blake3(f.readAll())
+            f.close()
+
+            local newContents = http.get("https://raw.githubusercontent.com/mrMalinka/cc-cryptocoin/refs/heads/main/startup.lua")
+            if newContents then
+                local newHash = blake3(newContents)
+                if currentHash ~= newHash then
+                    local newFile = fs.open("startup.lua", "w")
+                    newFile.write(newContents)
+                    newFile.close()
+                    os.reboot()
+                end
+            end
+
+            sleep(60 * 15) -- 15 minute delay
+        end
+    end
+)
