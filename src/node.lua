@@ -469,9 +469,11 @@ parallel.waitForAny(
             local currentHash = blake3(f.readAll())
             f.close()
 
-            local newContents = http.get("https://raw.githubusercontent.com/mrMalinka/cc-cryptocoin/refs/heads/main/startup.lua")
-            if newContents then
+            local newContentsRequest = http.get("https://raw.githubusercontent.com/mrMalinka/cc-cryptocoin/refs/heads/main/startup.lua")
+            if newContentsRequest then
+                local newContents = newContentsRequest.readAll()
                 local newHash = blake3(newContents)
+
                 if currentHash ~= newHash then
                     local newFile = fs.open("startup.lua", "w")
                     newFile.write(newContents)
