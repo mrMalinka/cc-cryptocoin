@@ -146,6 +146,21 @@ local function syncLedgerByNetwork()
     parallel.waitForAny(
         function()
             sleep(10)
+            if #ledgers < 1 then
+                printC(colors.red, "Timeout passed, but no ledgers were received. Are you sure the modem you're using is an ender modem, or that there are any other nodes on the network?")
+    
+                parallel.waitForAny(
+                    function()
+                        repeat
+                            sleep(1)
+                        until #ledgers > 0
+                    end,
+                    function()
+                        printC(colors.red, "Click to stop...")
+                        os.pullEvent("mouse_button")
+                    end
+                )
+            end
         end,
         function()
             term.setTextColor(colors.green)
@@ -196,7 +211,7 @@ local function ledgerInit()
     end
 
     local networkLedger = syncLedgerByNetwork()
-    if not networkLedger then error("No ledger was received. Please make sure an ender modem is connected.") end
+    if not networkLedger then error("No ledger was received.") end
 
     local realLedger
     if networkLedger:isValid() and #networkLedger.transactions >= #cachedLedger.transactions then
@@ -436,6 +451,18 @@ elseif args[1] == "wallet" then
 
     printC(colors.blue, "Placing on pastebin...")
     pbinPut(address)
+
 else
+    local pname = shell.getRunningProgram()
+    if pname ~= "startup.lua" then
+        printC(
+            colors.red,
+            ("Warning:\nScript is not named startup.lua! Please run 'mv %s startup.lua' to rename."):format(
+                pname
+            )
+        )
+        sleep(2)
+    end
+
     startNode()
 end
