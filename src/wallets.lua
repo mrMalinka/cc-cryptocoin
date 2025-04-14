@@ -1,5 +1,4 @@
 local blake3 = require "ccryptolib.blake3".digest
-local ed = require "ccryptolib.ed25519"
 local rand = require "ccryptolib.random"
 rand.initWithTiming()
 
@@ -13,7 +12,6 @@ local function getPrivate()
     else
         error("Please place only one disk drive on the left or righ side of the computer.")
     end
-    local drive = peripheral.wrap("left") or peripheral.wrap("right")
     assert(drive.isDiskPresent(), "No disk inside disk drive!")
     drive.setDiskLabel("Crypto Wallet")
 

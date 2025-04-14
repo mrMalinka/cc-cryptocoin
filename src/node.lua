@@ -76,8 +76,8 @@ function Transaction:isValid() -- does NOT check if there were enough funds
     if self.from == "genesis" then
         return self.amount == 20000 and self.timestamp == 0 and self.signature == ""
     end
-    if walletLib.pubkeyToAddress(self.from) == self.to then return false end
     if not walletLib.isBase58Address(self.to) then return false end
+    if walletLib.pubkeyToAddress(self.from) == self.to then return false end
 
     local message = textutils.serialize({
         self.from,
@@ -91,7 +91,7 @@ function Transaction:isValid() -- does NOT check if there were enough funds
 
     if self.amount <= 0 then return false end
     if self.amount ~= math.floor(self.amount) then return false end
-    if self.timestamp < 0 then return false end
+    if self.timestamp <= 0 then return false end
     
     return true
 end
@@ -106,17 +106,35 @@ function Ledger:new()
     self.transactions = {}
     return self
 end
-function Ledger:isValid() -- does NOT check for negative balances
+function Ledger:isValid()
+    -- check order of transactions
     for i, tx in ipairs(self.transactions) do
         local previous = self.transactions[i-1]
         if previous then
-            if tx.timestamp <= previous.timestamp then return false end
-        end
+            if tx.timestamp < previous.timestamp then return false end
+        elseif (
+            tx.from ~= "genesis" or tx.amount ~= 20000 or
+            tx.timestamp ~= 0 or tx.signature ~= ""
+        ) then return false end
             
+        -- check signature, fields, etc
         if not tx:isValid() then
             return false
         end
     end
+
+    -- verify no negative balances
+    local balances = {}
+    for _, tx in ipairs(self.transactions) do
+        local sender = walletLib.pubkeyToAddress(tx.from)
+        balances[sender] = (balances[sender] or 0) - tx.amount
+        balances[tx.to] = (balances[tx.to] or 0) + tx.amount
+    end
+    
+    for addr, bal in pairs(balances) do
+        if bal < 0 and addr ~= "genesis" then return false end
+    end
+ 
     return true
 end
 function Ledger:balanceOf(address)
@@ -229,9 +247,9 @@ local function handleTransactionRequest(baseLedger, request)
     -- check if the timestamp wasnt faked
     if type(request.timestamp) == "number" then
         if not (
-            request.timestamp > os.epoch() - 10000
-            or
-            request.timestamp < os.epoch() + 10000
+            request.timestamp - 2000 < os.epoch()
+            and
+            request.timestamp + 2000 > os.epoch()
         ) then return baseLedger end
     else return baseLedger end
 
@@ -250,11 +268,6 @@ local function handleTransactionRequest(baseLedger, request)
     end
     table.insert(newLedger.transactions, transaction)
 
-    -- verify if balance isnt negative
-    if newLedger:balanceOf(
-        walletLib.pubkeyToAddress(transaction.from)
-    ) < 0 then return baseLedger end
-    
     if not newLedger:isValid() then
         return baseLedger
     end
