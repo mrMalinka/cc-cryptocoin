@@ -1,1 +1,3 @@
 - Fix inconsistent node spread influencing epsilon too much (eg. 10 nodes within 500 blocks, 1 node within 10k blocks makes small cluster trust the far away node more than they trust eachother)
+
+- Allow only extensions of the cached ledger when starting node
