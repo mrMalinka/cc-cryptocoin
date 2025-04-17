@@ -1,88 +1,70 @@
-local function computeDynamicEpsilon(distances)
-    local n = #distances
-    if n <= 1 then
-        return 200
+local toleranceMul = 160 -- adjust this as needed
+
+local function computeMostPopular(ledgerObjects)
+    local olen = #ledgerObjects
+    if olen == 0 then
+        return nil
+    elseif olen == 1 then
+        return ledgerObjects[1].ledger
+    elseif olen == 2 then
+        return ledgerObjects[math.random(2)].ledger
     end
 
-    local q1_idx = math.floor(0.25 * n)
-    if q1_idx < 1 then q1_idx = 1 end
-    
-    local q3_idx = math.ceil(0.75 * n)
-    if q3_idx > n then q3_idx = n end
+    local sum = 0
+    for _, l in ipairs(ledgerObjects) do
+        sum = sum + l.dist
+    end
 
-    local q1 = distances[q1_idx]
-    local q3 = distances[q3_idx]
-    local iqr = q3 - q1
+    local epsilon = toleranceMul * math.log(sum / olen, 10)
 
-    return 2 * iqr / (n^(1/3))
-end
+    table.sort(ledgerObjects, function(a, b) return a.dist < b.dist end)
 
-local function binarySearchLower(arr, target)
-    local left, right = 1, #arr
-    while left <= right do
-        local mid = math.floor((left + right) / 2)
-        if arr[mid] < target then
-            left = mid + 1
-        else
-            right = mid - 1
+    -- filter for chains
+    local filteredChain = {}
+    local lastDist = -math.huge
+    for _, l in ipairs(ledgerObjects) do
+        --print(("%s + %s < %s"):format(lastDist, epsilon, l.dist))
+        if lastDist + epsilon < l.dist then
+            table.insert(filteredChain, l)
+        end
+        lastDist = l.dist
+    end
+
+    -- filter for clusters
+    local filtered = {}
+    lastDist = -math.huge
+    for _, l in ipairs(filteredChain) do
+        if math.abs(l.dist - lastDist) > epsilon then
+            table.insert(filtered, l)
+            lastDist = l.dist
         end
     end
-    return left
-end
 
-local function binarySearchUpper(arr, target)
-    local left, right = 1, #arr
-    while left <= right do
-        local mid = math.floor((left + right) / 2)
-        if arr[mid] > target then
-            right = mid - 1
-        else
-            left = mid + 1
-        end
-    end
-    return right
-end
-
-local function computeMostPopular(ledgers)
+    -- sanitation done, find the most popular one now
+    -- map ledger hashes to popularities
     local popularities = {}
-    local distances = {}
-
-    for _, ledgerObject in ipairs(ledgers) do
-        table.insert(distances, ledgerObject.dist)
-    end
-    table.sort(distances)
-
-    local epsilon = computeDynamicEpsilon(distances)
-
-    for _, ledgerObject in ipairs(ledgers) do
-        local ledger = ledgerObject.ledger
-        setmetatable(ledger, Ledger)
-        local hash = ledger:hash()
-        local currentDist = ledgerObject.dist
-
-        local lower, upper = currentDist - epsilon, currentDist + epsilon
-        local firstIndex = binarySearchLower(distances, lower)
-        local lastIndex = binarySearchUpper(distances, upper)
-        local clusterSize = lastIndex - firstIndex + 1
-
-        if not popularities[hash] then
-            popularities[hash] = { value = 0.0, dist = currentDist }
-        end
-        popularities[hash].value = popularities[hash].value + (1.0 / (clusterSize^1.5))
+    for _, l in ipairs(filtered) do
+        local hash = l.ledger:hash()
+        popularities[hash] = (popularities[hash] or 0) + 1
     end
 
-    local maxValue, maxHash = -math.huge, nil
-    for hash, data in pairs(popularities) do
-        if data.value > maxValue then
-            maxValue, maxHash = data.value, hash
+    -- find most popular
+    local highestCount = -math.huge
+    local mostPopularHash = nil
+    for hash, count in pairs(popularities) do
+        if count > highestCount then
+            highestCount = count
+            mostPopularHash = hash
         end
     end
 
-    for _, ledgerObject in ipairs(ledgers) do
-        if ledgerObject.ledger:hash() == maxHash and ledgerObject.ledger:isValid() then
-            return ledgerObject.ledger
+    for _, l in ipairs(filtered) do
+        if l.ledger:hash() == mostPopularHash then
+            return l.ledger
         end
     end
+
+    -- fallback
     return nil
 end
 
