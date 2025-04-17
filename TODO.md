@@ -1,1 +1,0 @@
-- Allow only extensions of the cached ledger when starting node

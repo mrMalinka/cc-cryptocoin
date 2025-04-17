@@ -17,6 +17,25 @@ local function clear()
     term.clear()
     term.setCursorPos(1, 1)
 end
+local function extends(a, b) -- returns whether a is an extension of b
+    for i = 1, #b do
+        local elementA = a[i]
+        local elementB = b[i]
+        
+        if not elementA then
+            return false
+        end
+        
+        if type(elementB) == "table" then
+            if type(elementA) ~= "table" or not extends(elementA, elementB) then
+                return false
+            end
+        elseif elementA ~= elementB then
+            return false
+        end
+    end
+    return true
+end
 local function printC(color, ...)
     local before = term.getTextColor()
     term.setTextColor(color)
@@ -41,11 +60,6 @@ local function checkTransactionFields(request)
         and type(request.amount) == "number"
         and type(request.timestamp) == "number"
         and type(request.signature) == "string"
-end
-local function checkLedgerFields(ledger)
-    if type(ledger) == "table" then
-        return ledger.transactions ~= nil
-    else return false end
 end
 
 
@@ -159,7 +173,7 @@ end
 
 
 
-local function syncLedgerByNetwork()
+local function syncLedgerByNetwork(comparison)
     local ledgers = {}
     printC(colors.blue, "Gathering ledgers...")
     parallel.waitForAny(
@@ -187,7 +201,10 @@ local function syncLedgerByNetwork()
                 local _, _, _, _, msg, dist = os.pullEvent("modem_message")
                 if msg and dist then
                     printC(colors.green, "New ledger received!")
-                    if checkLedgerFields(msg) then
+
+                    -- this check could potentially break a node if it somehow desyncs from
+                    -- the network, but were betting on that not happening
+                    if extends(msg, comparison) then
                         -- restore metatables
                         setmetatable(msg, Ledger)
                         for _, tx in ipairs(msg.transactions) do
@@ -229,11 +246,11 @@ local function ledgerInit()
         save.close()
     end
 
-    local networkLedger = syncLedgerByNetwork()
+    local networkLedger = syncLedgerByNetwork(cachedLedger)
     if not networkLedger then error("No ledger was received.") end
 
     local realLedger
-    if networkLedger:isValid() and #networkLedger.transactions >= #cachedLedger.transactions then
+    if networkLedger:isValid() then
         realLedger = networkLedger
     else
         realLedger = cachedLedger
