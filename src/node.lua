@@ -180,7 +180,7 @@ local function syncLedgerByNetwork(comparison)
     parallel.waitForAny(
         function()
             sleep(10)
-            if #ledgers < 1 then
+            if #ledgers < 1 and not comparison then
                 printC(colors.red, "Timeout passed, but no ledgers were received. Are you sure the modem you're using is an ender modem, or that there are any other nodes on the network?")
     
                 parallel.waitForAny(
@@ -248,7 +248,7 @@ local function ledgerInit()
     end
 
     local networkLedger = syncLedgerByNetwork(cachedLedger)
-    if not networkLedger then error("No ledger was received.") end
+    if not networkLedger then return cachedLedger end
 
     local realLedger
     if networkLedger:isValid() then
