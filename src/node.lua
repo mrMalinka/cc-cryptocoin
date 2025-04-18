@@ -1,6 +1,6 @@
 local autoupdate = true
 local NETWORK_CHANNEL = 8912
-local MINTED_AMOUNT = 15000000000 
+local MINTED_AMOUNT = 15000000000
 
 local ed25519 = require "ccryptolib.ed25519"
 local blake3 = require "ccryptolib.blake3".digest
@@ -22,11 +22,11 @@ local function extends(a, b) -- returns whether a is an extension of b
     for i = 1, #b do
         local elementA = a[i]
         local elementB = b[i]
-        
+
         if not elementA then
             return false
         end
-        
+
         if type(elementB) == "table" then
             if type(elementA) ~= "table" or not extends(elementA, elementB) then
                 return false
@@ -180,9 +180,9 @@ local function syncLedgerByNetwork(comparison)
     parallel.waitForAny(
         function()
             sleep(10)
-            if #ledgers < 1 and not comparison then
+            if #ledgers < 1 and #comparison.transactions == 0 then
                 printC(colors.red, "Timeout passed, but no ledgers were received. Are you sure the modem you're using is an ender modem, or that there are any other nodes on the network?")
-    
+
                 parallel.waitForAny(
                     function()
                         repeat
@@ -467,7 +467,7 @@ if args[1] == "genesis" then
     local save = fs.open("ledger.db", "w")
     save.write(textutils.serialize(genesisLedger, {compact = true}))
     save.close()
-    
+
 elseif args[1] == "wallet" then
     clear()
     printC(colors.blue, "Your wallet address is:")
