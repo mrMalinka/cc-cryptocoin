@@ -192,6 +192,7 @@ local function syncLedgerByNetwork(comparison)
                     function()
                         printC(colors.red, "\nClick to stop...")
                         os.pullEvent("mouse_click")
+                        error("No ledgers found")
                     end
                 )
             end
@@ -436,9 +437,11 @@ local function startNode(genesisLedger)
     )
 
     os.pullEvent = _ope
-    local save = fs.open("ledger.db", "w")
-    save.write(textutils.serialize(ledger, {compact = true}))
-    save.close()
+    if ledger:isValid() then
+        local save = fs.open("ledger.db", "w")
+        save.write(textutils.serialize(ledger, {compact = true}))
+        save.close()
+    end
 end
 
 clear()
@@ -464,9 +467,11 @@ if args[1] == "genesis" then
 
     table.insert(genesisLedger.transactions, genesisTx)
 
-    local save = fs.open("ledger.db", "w")
-    save.write(textutils.serialize(genesisLedger, {compact = true}))
-    save.close()
+    if ledger:isValid() then
+        local save = fs.open("ledger.db", "w")
+        save.write(textutils.serialize(genesisLedger, {compact = true}))
+        save.close()
+    end
 
 elseif args[1] == "wallet" then
     clear()
