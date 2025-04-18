@@ -1,5 +1,6 @@
 local autoupdate = true
 local NETWORK_CHANNEL = 8912
+local MINTED_AMOUNT = 15000000000 
 
 local ed25519 = require "ccryptolib.ed25519"
 local blake3 = require "ccryptolib.blake3".digest
@@ -88,7 +89,7 @@ function Transaction:isValid() -- does NOT check if there were enough funds
     if not checkTransactionFields(self) then return false end
 
     if self.from == "genesis" then
-        return self.amount == 20000 and self.timestamp == 0 and self.signature == ""
+        return self.amount == MINTED_AMOUNT and self.timestamp == 0 and self.signature == ""
     end
     if not walletLib.isBase58Address(self.to) then return false end
     if walletLib.pubkeyToAddress(self.from) == self.to then return false end
@@ -127,7 +128,7 @@ function Ledger:isValid()
         if previous then
             if tx.timestamp < previous.timestamp then return false end
         elseif (
-            tx.from ~= "genesis" or tx.amount ~= 20000 or
+            tx.from ~= "genesis" or tx.amount ~= MINTED_AMOUNT or
             tx.timestamp ~= 0 or tx.signature ~= ""
         ) then return false end
             
@@ -456,7 +457,7 @@ if args[1] == "genesis" then
     local genesisTx = Transaction:new(
         "genesis",
         ownerAddress,
-        20000,
+        MINTED_AMOUNT,
         0,
         ""
     )

@@ -1,5 +1,5 @@
 # cc-cryptocoin
-A modem-based, decentralized cryptocurrency in minecraft using CC: Tweaked. NOT a blockchain!
+A modem-based, decentralized, P2P cryptocurrency in minecraft using CC: Tweaked. NOT a blockchain!
 
 ## Setup
 

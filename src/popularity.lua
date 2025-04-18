@@ -23,7 +23,6 @@ local function computeMostPopular(ledgerObjects)
     local filteredChain = {}
     local lastDist = -math.huge
     for _, l in ipairs(ledgerObjects) do
-        --print(("%s + %s < %s"):format(lastDist, epsilon, l.dist))
         if lastDist + epsilon < l.dist then
             table.insert(filteredChain, l)
         end
