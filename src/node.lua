@@ -54,6 +54,11 @@ local function pbinPut(data)
     printC(colors.red, ("\x7f"):rep(width) .. "\n")
     fs.delete("___wallet_address")
 end
+local function saveLedger(ledger)
+    local file = fs.open("ledger.db", "w")
+    file.write(textutils.serialise(ledger, {compact=true}))
+    file.close()
+end
 local function checkTransactionFields(request)
     if type(request) ~= "table" then return false end
     return type(request.from) == "string"
@@ -271,13 +276,11 @@ end
 local function handleTransactionRequest(baseLedger, request)
     if not checkTransactionFields(request) then return baseLedger end
     -- check if the timestamp wasnt faked
-    if type(request.timestamp) == "number" then
-        if not (
-            request.timestamp - 2000 < os.epoch()
-            and
-            request.timestamp + 2000 > os.epoch()
-        ) then return baseLedger end
-    else return baseLedger end
+    if not (
+        request.timestamp - 10000 < os.epoch()
+        and
+        request.timestamp + 10000 > os.epoch()
+    ) then return baseLedger end
 
     local transaction = Transaction:new(
         request.from,
@@ -350,6 +353,8 @@ local function startNode(genesisLedger)
                     NETWORK_CHANNEL,
                     ledger
                 )
+                -- periodically save the ledger
+                saveLedger(ledger)
             end
         end,
         function()
@@ -454,9 +459,7 @@ local function startNode(genesisLedger)
 
     os.pullEvent = _ope
     if ledger:isValid() then
-        local save = fs.open("ledger.db", "w")
-        save.write(textutils.serialize(ledger, {compact = true}))
-        save.close()
+        saveLedger(ledger)
     end
 end
 
@@ -484,9 +487,7 @@ if args[1] == "genesis" then
     table.insert(genesisLedger.transactions, genesisTx)
 
     if genesisLedger:isValid() then
-        local save = fs.open("ledger.db", "w")
-        save.write(textutils.serialize(genesisLedger, {compact = true}))
-        save.close()
+        saveLedger(ledger)
     end
 
 elseif args[1] == "wallet" then
@@ -502,14 +503,16 @@ elseif args[1] == "wallet" then
 end
 
 
-local pname = shell.getRunningProgram()
-if pname ~= "startup.lua" then
-    if fs.exists("startup.lua") then
-        printC(colors.red, "Moving existing `startup.lua` to `_old_startup.lua`")
-        fs.move("startup.lua", "_old_startup.lua")
-    end
+if autoupdate then
+    local pname = shell.getRunningProgram()
+    if pname ~= "startup.lua" then
+        if fs.exists("startup.lua") then
+            printC(colors.red, "Moving existing `startup.lua` to `_old_startup.lua`")
+            fs.move("startup.lua", "_old_startup.lua")
+        end
 
-    fs.move(pname, "startup.lua")
+        fs.move(pname, "startup.lua")
+    end
 end
 
 parallel.waitForAny(
