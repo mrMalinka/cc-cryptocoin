@@ -48,7 +48,7 @@ local function pbinPut(data)
     local file = fs.open("___wallet_address", "w")
     file.write(data)
     file.close()
-    
+
     printC(colors.red, "\n" .. ("\x7f"):rep(width))
     shell.run("pastebin put ___wallet_address")
     printC(colors.red, ("\x7f"):rep(width) .. "\n")
@@ -81,7 +81,7 @@ function Transaction:new(from, to, amount, timestamp, signature)
     the message to sign is equal to textutils.serialize(fields, {compact = true}), fields being a table of:
     self.from, self.to, self.amount, self.timestamp
     ]]
-    self.signature = signature 
+    self.signature = signature
 
     return self
 end
@@ -107,7 +107,7 @@ function Transaction:isValid() -- does NOT check if there were enough funds
     if self.amount <= 0 then return false end
     if self.amount ~= math.floor(self.amount) then return false end
     if self.timestamp <= 0 then return false end
-    
+
     return true
 end
 
@@ -131,7 +131,7 @@ function Ledger:isValid()
             tx.from ~= "genesis" or tx.amount ~= MINTED_AMOUNT or
             tx.timestamp ~= 0 or tx.signature ~= ""
         ) then return false end
-            
+
         -- check signature, fields, etc
         if not tx:isValid() then
             return false
@@ -141,15 +141,22 @@ function Ledger:isValid()
     -- verify no negative balances
     local balances = {}
     for _, tx in ipairs(self.transactions) do
-        local sender = walletLib.pubkeyToAddress(tx.from)
+        local sender
+        if tx.from ~= "genesis" then
+            sender = walletLib.pubkeyToAddress(tx.from)
+        else sender = "genesis" end
+
         balances[sender] = (balances[sender] or 0) - tx.amount
         balances[tx.to] = (balances[tx.to] or 0) + tx.amount
     end
-    
+
     for addr, bal in pairs(balances) do
+        -- genesis should have -MINTED_AMOUNT balance
+        if addr == "genesis" and bal ~= -MINTED_AMOUNT then return false end
+        -- any other address should have 0 or more
         if bal < 0 and addr ~= "genesis" then return false end
     end
- 
+
     return true
 end
 function Ledger:balanceOf(address)
@@ -254,9 +261,9 @@ local function ledgerInit()
     local realLedger
     if networkLedger:isValid() then
         realLedger = networkLedger
-    else
+    elseif cachedLedger:isValid() then
         realLedger = cachedLedger
-    end
+    else error("Cached ledger was invalid.") end
 
     return realLedger
 end
@@ -358,6 +365,9 @@ local function startNode(genesisLedger)
                     printC(colors.blue, "\n'wallet':")
                     printC(colors.white, "Check the status of your wallet.")
 
+                    printC(colors.blue, "\n'ledger':")
+                    printC(colors.white, "Display the agreed upon ledger.")
+
                     printC(colors.blue, "\n'stop':")
                     printC(colors.white, "Stop the node.")
 
@@ -419,6 +429,12 @@ local function startNode(genesisLedger)
                         print("Click to continue...")
                         os.pullEvent("mouse_click")
                     end
+  
+                elseif input == "ledger" then
+                    clear()
+                    require "cc.pretty".pretty_print(ledger) --$$$DYNAMIC
+                    printC(colors.red, "Click to continue...")
+                    os.pullEvent("mouse_click")
 
                 elseif input == "stop" then
                     term.setTextColor(colors.red)
