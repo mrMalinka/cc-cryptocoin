@@ -9,7 +9,7 @@ A node should only have one **ender** modem and only one disk drive on either th
 **Example:**  
 <img src="images/node.png" width=700>
 
-The floppy disk inside the disk drive will be used as the wallet.
+The floppy disk inside the disk drive will be used as the wallet. Loosing this wallet means loosing the money. **Do not place a lot of nodes close together, this does not have any benefits**.
 > [!NOTE]
 > Do not share the contents of the file inside the floppy disk (or the disk itself) unless you want your money stolen.  
 
