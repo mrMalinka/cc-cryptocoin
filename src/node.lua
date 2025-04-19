@@ -467,7 +467,7 @@ if args[1] == "genesis" then
 
     table.insert(genesisLedger.transactions, genesisTx)
 
-    if ledger:isValid() then
+    if genesisLedger:isValid() then
         local save = fs.open("ledger.db", "w")
         save.write(textutils.serialize(genesisLedger, {compact = true}))
         save.close()
